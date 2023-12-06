@@ -16,9 +16,9 @@ resource "aws_cognito_user_pool" "operations_user_pool" {
     invite_message_template {
       email_subject = "Welcome! A new operations user has been created."
       email_message = templatefile("${path.module}/templates/operations_user_signup.tftpl", {
-
+        operations_user_pool_domain = "${var.operations_user_pool_domain}"
       })
-      # sms_message = "Your username is {username} and password is {####}."
+      sms_message = "Welcome! Your username is {username} and password is {####}. Login to the application at ${var.operations_user_pool_domain}."
     }
   }
 
@@ -87,18 +87,20 @@ resource "aws_cognito_user_pool_client" "operations_client" {
   logout_urls   = ["https://example.com"]
 } # aws_cognito_user_pool_client.operations_client
 
-resource "aws_cognito_user_pool_ui_customization" "operations_user_pool_ui_customization" {
-  client_id  = aws_cognito_user_pool_client.operations_client.id
-  css        = ".banner-customizable { background-color: #5A4570; }"
-  image_file = filebase64("${path.module}/images/rocket1.png")
+# TODO: Skip UI Customization for now... need to add DNS modules...
 
-  user_pool_id = aws_cognito_user_pool.operations_user_pool.id
-}
+# resource "aws_cognito_user_pool_ui_customization" "operations_user_pool_ui_customization" {
+#   client_id  = aws_cognito_user_pool_client.operations_client.id
+#   css        = ".banner-customizable { background-color: #5A4570; }"
+#   image_file = filebase64("${path.module}/images/rocket1.png")
+
+#   user_pool_id = aws_cognito_user_pool.operations_user_pool.id
+# }
 
 resource "aws_cognito_user" "admin" {
   user_pool_id = aws_cognito_user_pool.operations_user_pool.id
   username     = "admin"
-  password     = "@dmin123!"
+  password     = "Admin123!@"
 
   desired_delivery_mediums = ["EMAIL"]
   force_alias_creation     = true
