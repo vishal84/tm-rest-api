@@ -70,7 +70,7 @@ resource "aws_cognito_user_pool" "operations_user_pool" {
   }
 } # aws_cognito_user_pool.operations_user_pool
 
-resource "aws_cognito_user_pool_client" "client" {
+resource "aws_cognito_user_pool_client" "operations_client" {
   name                                 = "operations-client"
   allowed_oauth_flows_user_pool_client = true
   generate_secret                      = false
@@ -78,8 +78,48 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_flows                  = ["implicit", "code"]
   explicit_auth_flows                  = ["ADMIN_NO_SRP_AUTH", "USER_PASSWORD_AUTH"]
   supported_identity_providers         = ["COGNITO"]
+  prevent_user_existence_errors        = "ENABLED"
 
-  user_pool_id  = aws_cognito_user_pool.pool.id
+  write_attributes = ["email", "custom:tenantId", "custom:role", "custom:apiKey"]
+
+  user_pool_id  = aws_cognito_user_pool.operations_user_pool.id
   callback_urls = ["https://example.com"]
-  logout_urls   = ["https://sumeet.life"]
+  logout_urls   = ["https://example.com"]
+} # aws_cognito_user_pool_client.operations_client
+
+resource "aws_cognito_user_pool_ui_customization" "operations_user_pool_ui_customization" {
+  client_id  = aws_cognito_user_pool_client.operations_client.id
+  css        = ".banner-customizable { background-color: #5A4570; }"
+  image_file = filebase64("${path.module}/images/rocket1.png")
+
+  user_pool_id = aws_cognito_user_pool.operations_user_pool.id
 }
+
+resource "aws_cognito_user" "admin" {
+  user_pool_id = aws_cognito_user_pool.operations_user_pool.id
+  username     = "admin"
+  password     = "@dmin123!"
+
+  desired_delivery_mediums = ["EMAIL"]
+  force_alias_creation     = true
+
+  attributes = {
+    email      = "admin@example.com"
+    "tenantId" = "admin"
+    "apiKey"   = "adminKey123"
+    "role"     = "admin"
+  }
+} # aws_cognito_user.admin
+
+resource "aws_cognito_user_group" "admin_group" {
+  name         = "admins"
+  description  = "A user group for operations administrators."
+  user_pool_id = aws_cognito_user_pool.operations_user_pool.id
+  precedence   = 0
+} # aws_cognito_user_group.admin_group
+
+resource "aws_cognito_user_in_group" "add_admin_to_admin_group" {
+  user_pool_id = aws_cognito_user_pool.operations_user_pool.id
+  group_name   = aws_cognito_user_group.admin_group.name
+  username     = aws_cognito_user.admin.username
+} # aws_cognito_user_in_group.add_admin_to_admin_group
