@@ -7,6 +7,7 @@ resource "aws_api_gateway_rest_api" "tm_api" {
   }
 } # aws_api_gateway_rest_api.tm_api
 
+# resource paths
 module "echo_resource" {
   source               = "./api_resource"
   api_gateway_id       = aws_api_gateway_rest_api.tm_api.id
